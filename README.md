@@ -32,6 +32,6 @@
 	opt is:  
 ~~~
 
-    例如，输入`3`，可以将本文件夹内firmware.hex配置到RISCV的存储单元中，接着输入`0`以启动程序  
-4) 可以在make后增加参数RAM_SIZE_KB制定RISCV存储单元的大小，如'make RAM_SIZE_KB=128'，目前FL-M32支持64,128,256KB三种.
-5) 你还可以运行'make help'查询make支持的参数.
+    例如，输入*3*，可以将本文件夹内firmware.hex配置到RISCV的存储单元中，接着输入*0*以启动程序  
+4) 可以在make后增加参数RAM_SIZE_KB制定RISCV存储单元的大小，如`make RAM_SIZE_KB=128`，目前FL-M32支持64,128,256KB三种.
+5) 你还可以运行`make help`查询make支持的参数.
