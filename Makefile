@@ -1,5 +1,11 @@
-RAM_SIZE_KB 	= 128
-CONF_LOOP_WR	= $(shell expr $(RAM_SIZE_KB) \* 4)
+# Compatiable with DP4C
+DP4C			= 0
+RAM_SIZE_KB 	= 256
+ifeq (${DP4C}, 1)
+	CONF_LOOP_WR= $(shell expr $(RAM_SIZE_KB) \* 4 )
+else
+	CONF_LOOP_WR= $(shell expr $(RAM_SIZE_KB) )
+endif
 CC_PARAM 		+= -DCONF_LOOP_WR=$(CONF_LOOP_WR)
 
 all:
@@ -11,4 +17,5 @@ clean:
 help:
 	@echo "--------------------------------------------------------------"
 	@echo "You can use 'make RAM_SIZE_KB=128' to specify the RAM size."
+	@echo "You can use 'make DP4C=1' to be compatiable with DP4C."
 	@echo "--------------------------------------------------------------"

@@ -1,9 +1,7 @@
 #include "send.h"
 #include "unistd.h"
 
-// #define CONF_LOOP_WR 1024
-// #define CONF_LOOP_WR 512, which gets from Makefile;
-// #define CONF_LOOP_RD CONF_LOOP_WR*50
+// #define CONF_LOOP_WR 256, which gets from Makefile;
 
 // #define MULTI_CORE 1
 
@@ -22,24 +20,21 @@ int main(int argc, char *argv[])
 		printf("\t4:\tread instruction\n");
 		printf("\t5:\topen/close black pressure\n");
 		printf("\t6:\tstart abcd PEs, multi-core running mode\n");
-		printf("\tNote:\tcurrent RAM size is %d KB\n",CONF_LOOP_WR/4);
+		printf("\tNote:\tcurrent RAM size is %d KB\n",CONF_LOOP_WR);
 		printf("//======================================================//\n");
 		printf("opt is: ");
 		scanf("%d", &opt);
 
 		if(opt == 0){
-				set_read_sel(0, 14);
+			//* start PE_0;
+			set_read_sel(0, 14);
+			//* start all PEs;
+			// set_read_sel(0, 0);
+			//* start 2 PEs;
+			// set_read_sel(0, 12);
 		}
 		else if(opt == 1){
-			#ifdef MULTI_CORE
-				int bitmap;
-				printf("status of pe in bitmap is: (0 is running)");
-				scanf("%d", &bitmap);
-
-				set_read_sel(0, bitmap);
-			#else
-				set_read_sel(0, 1);
-			#endif
+			set_read_sel(0, 15);
 		}
 		else if(opt == 2)
 			set_read_sel(1, 0);
@@ -47,10 +42,15 @@ int main(int argc, char *argv[])
 			char fileName[30] = "firmware.hex";
 			int lineNum = 0;
 			for (i = 0; i < CONF_LOOP_WR; i++){
-				lineNum = 64*i;
+				#if(DP4C==1)
+					lineNum = 64*i;
+				#else
+					lineNum = 256*i;
+				#endif
 				write_tcm(fileName, lineNum);
 			}
 		}
+	#if(DP4C==1)
 		else if(opt == 4){
 			for (i = 0; i < (CONF_LOOP_WR*50); i++){
 				read_tcm(i);
@@ -68,7 +68,8 @@ int main(int argc, char *argv[])
 			scanf("%d", &value);
 			open_backPressure(value);
 		}
-		if(opt == 6){
+	#endif
+		else if(opt == 6){
 			int bitmap;
 			printf("status of pe in bitmap is: (0 is running) ");
 			scanf("%d", &bitmap);
