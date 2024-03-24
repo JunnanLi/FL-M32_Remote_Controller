@@ -1,7 +1,5 @@
-#include "send.h"
+#include "send_recv.h"
 #include "unistd.h"
-
-// #define CONF_LOOP_WR 256, which gets from Makefile;
 
 // #define MULTI_CORE 1
 
@@ -20,7 +18,7 @@ int main(int argc, char *argv[])
 		printf("\t4:\tread instruction\n");
 		printf("\t5:\topen/close black pressure\n");
 		printf("\t6:\tstart abcd PEs, multi-core running mode\n");
-		printf("\tNote:\tcurrent RAM size is %d KB\n",CONF_LOOP_WR);
+		printf("\tNote:\tcurrent RAM size: %d KB, DP4C_TAG:%d\n",RAM_SIZE_KB, DP4C);
 		printf("//======================================================//\n");
 		printf("opt is: ");
 		scanf("%d", &opt);
@@ -36,6 +34,7 @@ int main(int argc, char *argv[])
 		else if(opt == 1){
 			set_read_sel(0, 15);
 		}
+
 		else if(opt == 2)
 			set_read_sel(1, 0);
 		else if(opt == 3){
@@ -69,7 +68,7 @@ int main(int argc, char *argv[])
 			open_backPressure(value);
 		}
 	#endif
-		else if(opt == 6){
+		if(opt == 6){
 			int bitmap;
 			printf("status of pe in bitmap is: (0 is running) ");
 			scanf("%d", &bitmap);

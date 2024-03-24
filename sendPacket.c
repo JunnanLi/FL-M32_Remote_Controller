@@ -1,4 +1,4 @@
-#include "send.h"
+#include "send_recv.h"
 
 void send_packet(struct send_ctx *sendCtx)
 {
@@ -10,9 +10,8 @@ void send_packet(struct send_ctx *sendCtx)
 	unsigned char dst_mac[6] = {0x88,0x88,0x88,0x88,0x89,0x88};
 	    
       
-//	lib_net = libnet_init(LIBNET_LINK_ADV, "enp0s3", err_buf);
-	lib_net = libnet_init(LIBNET_LINK_ADV, "wlp0s20f3", err_buf);
-	// lib_net = libnet_init(LIBNET_LINK_ADV, "enx00e04d6da7b3", err_buf);
+	lib_net = libnet_init(LIBNET_LINK_ADV, NET_INTERFACE, err_buf);
+//	lib_net = libnet_init(LIBNET_LINK_ADV, "enx00e04d6da7b3", err_buf);
 	
 	if(NULL == lib_net)  
 	{  
@@ -45,53 +44,88 @@ void send_packet(struct send_ctx *sendCtx)
 } 
 
 #if(DP4C==1)
-	void read_tcm(int lineNum){
-		struct send_ctx *sendCtx;
-		sendCtx = (struct send_ctx *)malloc(sizeof(struct send_ctx));
-		struct one_128b *one128b = &(sendCtx->payload.one128b[0]);
-		one128b->pad            = htonl(0);
-		one128b->tcm_data       = htonl(0);
-		one128b->addr           = htonl(lineNum);
-	    one128b->conf_type[0]   = htons(4);
-	    one128b->conf_type[1]   = one128b->conf_type[0];
-		sendCtx->type           = 0x9005;
-		sendCtx->lens           = 50;
-		send_packet(sendCtx);
-	}
+    void write_tcm(char *fileName, int lineNum){
+        FILE * fp;
+        if((fp = fopen(fileName,"r")) == NULL){
+            perror("fail to read");
+            exit (1) ;
+        }
 
-	void open_backPressure(int value){
-	    struct send_ctx *sendCtx;
-		sendCtx                     = (struct send_ctx *)malloc(sizeof(struct send_ctx));
-	    sendCtx->type               = 0x9005;
-		struct one_128b *one128b    = &(sendCtx->payload.one128b[0]);
-		value                       = (value << 8) + 6;
-	    one128b->conf_type[0]       = htons(value);
-	    one128b->conf_type[1]       = one128b->conf_type[0];
-		one128b->pad                = htonl(0);
-		one128b->tcm_data           = htonl(0);
-		one128b->addr               = htonl(0);
-		sendCtx->lens               = 50;
+        u32	data;
+        int i;
+        for(i=0; i<lineNum; i++){
+            fscanf(fp,"%08x\n", &data);
+        }
 
-		send_packet(sendCtx);
-	}
-	#else
-	void set_read_sel(int read, u32 value){
-		struct send_ctx *sendCtx;
-		sendCtx                 = (struct send_ctx *)malloc(sizeof(struct send_ctx));
-		struct context *payload;
-		payload             	= &(sendCtx->payload);
-		if(read == 1)
-			payload->conf_type 	= htons(2);
-		else
-			payload->conf_type 	= htons(1);
-		payload->check_sum		= 0;
-		payload->pad[0]			= 0;
-		payload->pad[1]			= 0;
-		payload->tcm_addr 		= 0;
-		sendCtx->type           = 0x9005;
-		sendCtx->lens           = 50;
-		send_packet(sendCtx);
-	}
+        struct send_ctx *sendCtx;
+        sendCtx = (struct send_ctx *)malloc(sizeof(struct send_ctx));
+        struct one_128b *one128b;
+        for (i=0; i<64; i++){
+            
+            fscanf(fp,"%08x\n", &data);
+            one128b             = &(sendCtx->payload.one128b[i]);
+            one128b->pad        = htonl(0);
+            one128b->conf_type[0]   = htons(3);
+            one128b->conf_type[1]   = one128b->conf_type[0];
+            one128b->tcm_data   = htonl(data);
+            one128b->addr       = htonl(lineNum+i);
+        }
+        
+        sendCtx->type           = 0x9005;
+        sendCtx->lens           = 1024;
+        send_packet(sendCtx);
+
+        fclose(fp);
+    }
+    void read_tcm(int lineNum){
+        struct send_ctx *sendCtx;
+        sendCtx = (struct send_ctx *)malloc(sizeof(struct send_ctx));
+        struct one_128b *one128b = &(sendCtx->payload.one128b[0]);
+        one128b->pad            = htonl(0);
+        one128b->tcm_data       = htonl(0);
+        one128b->addr           = htonl(lineNum);
+        one128b->conf_type[0]   = htons(4);
+        one128b->conf_type[1]   = one128b->conf_type[0];
+        sendCtx->type           = 0x9005;
+        sendCtx->lens           = 50;
+        send_packet(sendCtx);
+    }
+
+    void set_read_sel(int read, u32 value){
+        struct send_ctx *sendCtx;
+        sendCtx                     = (struct send_ctx *)malloc(sizeof(struct send_ctx));
+        sendCtx->type               = 0x9005;
+        struct one_128b *one128b    = &(sendCtx->payload.one128b[0]);
+        if(read == 1)
+            one128b->conf_type[0]   = htons(2);
+        else
+            one128b->conf_type[0]   = htons(1);
+        one128b->conf_type[1]       = one128b->conf_type[0];
+        one128b->pad                = htonl(0);
+        one128b->tcm_data           = htonl(0);
+        one128b->addr               = htonl(value);
+        sendCtx->lens               = 50;
+
+        send_packet(sendCtx);
+
+    }
+
+    void open_backPressure(int value){
+        struct send_ctx *sendCtx;
+        sendCtx                     = (struct send_ctx *)malloc(sizeof(struct send_ctx));
+        sendCtx->type               = 0x9005;
+        struct one_128b *one128b    = &(sendCtx->payload.one128b[0]);
+        value                       = (value << 8) + 6;
+        one128b->conf_type[0]       = htons(value);
+        one128b->conf_type[1]       = one128b->conf_type[0];
+        one128b->pad                = htonl(0);
+        one128b->tcm_data           = htonl(0);
+        one128b->addr               = htonl(0);
+        sendCtx->lens               = 50;
+
+        send_packet(sendCtx);
+    }
+#else
 
 	void write_tcm(char *fileName, int lineNum){
 		FILE * fp;
@@ -126,6 +160,27 @@ void send_packet(struct send_ctx *sendCtx)
 
 		fclose(fp);
 	}
+
+	void set_read_sel(int read, u32 value){
+		struct send_ctx *sendCtx;
+		sendCtx                 = (struct send_ctx *)malloc(sizeof(struct send_ctx));
+		struct context *payload;
+		payload             	= &(sendCtx->payload);
+		if(read == 1)
+			payload->conf_type 	= htons(2);
+		else
+			payload->conf_type 	= htons(1);
+		payload->check_sum		= 0;
+		payload->pad[0]			= 0;
+		payload->pad[1]			= 0;
+		payload->tcm_addr 		= 0;
+		sendCtx->type           = 0x9005;
+		sendCtx->lens           = 50;
+		send_packet(sendCtx);
+	}
 #endif
+
+
+
 
 
