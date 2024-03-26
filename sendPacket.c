@@ -172,7 +172,7 @@ void send_packet(struct send_ctx *sendCtx)
 			payload->conf_type 	= htons(1);
 		payload->check_sum		= 0;
 		payload->pad[0]			= 0;
-		payload->pad[1]			= 0;
+		payload->pad[1]			= htonl(value);
 		payload->tcm_addr 		= 0;
 		sendCtx->type           = 0x9005;
 		sendCtx->lens           = 50;
